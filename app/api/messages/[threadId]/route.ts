@@ -39,7 +39,7 @@ export async function POST(
   const participants = await prisma.threadParticipant.findMany({
     where: { threadId },
     select: { userId: true },
-  });
+  }) satisfies { userId: string }[];
   await notifyMessageParticipants(
     threadId,
     user.id,
