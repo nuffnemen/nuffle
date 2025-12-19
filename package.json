@@ -11,7 +11,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "vercel-build": "prisma generate && next build",
-    "start": "prisma migrate deploy && next start -p $PORT",
+    "start": "prisma migrate deploy && next start -p ",
     "lint": "eslint"
   },
   "dependencies": {
