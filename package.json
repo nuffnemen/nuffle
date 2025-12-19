@@ -11,8 +11,9 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "vercel-build": "prisma generate && next build",
-    "start": "prisma migrate deploy && node server.js",
-    "lint": "eslint"
+    "start": "next start -p $PORT",
+    "lint": "eslint",
+    "migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.19.1",
