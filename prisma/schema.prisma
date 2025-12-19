@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  HEAD_INSTRUCTOR
+  INSTRUCTOR
+  STUDENT
+}
+
+enum ProgramKey {
+  NAIL_TECH
+  COSMETOLOGY
+}
+
+enum HourStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AssignmentTarget {
+  ALL
+  CLASS_GROUP
+  STUDENTS
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  GRADED
+  NEEDS_REVISION
+}
+
+enum AnnouncementAudience {
+  ALL
+  ROLE
+  CLASS_GROUP
+  INDIVIDUAL
+}
+
+enum CurriculumMaterialType {
+  TEXTBOOK
+  HANDOUT
+  TEACHING_MATERIAL
+  HOMEWORK
+}
+
+model User {
+  id         String  @id @default(cuid())
+  email      String  @unique
+  name       String?
+  role       Role    @default(STUDENT)
+  classGroup String?
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hours                     HourEntry[]            @relation("StudentHours")
+  createdHours              HourEntry[]            @relation("CreatedHours")
+  reviewedHours             HourEntry[]            @relation("ReviewedHours")
+  assignments               Assignment[]           @relation("AssignmentsCreated")
+  submissions               AssignmentSubmission[]
+  reviewedSubmissions       AssignmentSubmission[] @relation("SubmissionsReviewed")
+  sentMessages              Message[]              @relation("MessagesSent")
+  threadParticipants        ThreadParticipant[]
+  announcements             Announcement[]         @relation("AnnouncementCreated")
+  materials                 CurriculumMaterial[]   @relation("MaterialUploaded")
+  portfolioItems            PortfolioItem[]        @relation("PortfolioOwner")
+  portfolioFeedbackProvided PortfolioItem[]        @relation("PortfolioFeedback")
+  instructorTasksAssigned   InstructorTask[]       @relation("InstructorTaskAssignee")
+  instructorTasksCreated    InstructorTask[]       @relation("InstructorTaskCreator")
+  notifications             Notification[]
+  studentAttendances        Attendance[]           @relation("AttendanceStudent")
+  recordedAttendances       Attendance[]           @relation("AttendanceRecorder")
+}
+
+model Program {
+  id            String     @id @default(cuid())
+  key           ProgramKey @unique
+  name          String
+  requiredHours Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HourEntry {
+  id           String      @id @default(cuid())
+  studentId    String
+  student      User        @relation("StudentHours", fields: [studentId], references: [id])
+  minutes      Int
+  date         DateTime
+  startedAt    DateTime?
+  endedAt      DateTime?
+  notes        String?
+  status       HourStatus  @default(PENDING)
+  programKey   ProgramKey?
+  createdById  String?
+  createdBy    User?       @relation("CreatedHours", fields: [createdById], references: [id])
+  reviewedById String?
+  reviewedBy   User?       @relation("ReviewedHours", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Assignment {
+  id             String                 @id @default(cuid())
+  title          String
+  description    String
+  dueAt          DateTime?
+  target         AssignmentTarget       @default(ALL)
+  targetIds      String[]               @default([])
+  attachments    String[]               @default([])
+  pointsPossible Int?
+  createdById    String
+  createdBy      User                   @relation("AssignmentsCreated", fields: [createdById], references: [id])
+  submissions    AssignmentSubmission[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+}
+
+model AssignmentSubmission {
+  id                    String           @id @default(cuid())
+  assignmentId          String
+  assignment            Assignment       @relation(fields: [assignmentId], references: [id])
+  studentId             String
+  student               User             @relation(fields: [studentId], references: [id])
+  textAnswer            String?
+  attachmentRefs        String[]         @default([])
+  status                SubmissionStatus @default(SUBMITTED)
+  canResubmit           Boolean          @default(false)
+  resubmissionRequested Boolean          @default(false)
+  grade                 String?
+  feedback              String?
+  reviewedById          String?
+  reviewedBy            User?            @relation("SubmissionsReviewed", fields: [reviewedById], references: [id])
+  reviewedAt            DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@unique([assignmentId, studentId])
+}
+
+model Thread {
+  id            String              @id @default(cuid())
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @default(now())
+  lastMessageAt DateTime            @default(now())
+  participants  ThreadParticipant[]
+  messages      Message[]
+}
+
+model ThreadParticipant {
+  threadId  String
+  userId    String
+  thread    Thread   @relation(fields: [threadId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([threadId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    Thread   @relation(fields: [threadId], references: [id])
+  senderId  String
+  sender    User     @relation("MessagesSent", fields: [senderId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+enum NotificationType {
+  ANNOUNCEMENT
+  ASSIGNMENT_POSTED
+  ASSIGNMENT_SUBMITTED
+  MESSAGE
+  HOUR_LOGGED
+  HOUR_APPROVED
+  HOUR_REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  metadata  Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Announcement {
+  id                    String               @id @default(cuid())
+  title                 String
+  body                  String
+  audience              AnnouncementAudience @default(ALL)
+  audienceRoles         String[]             @default([])
+  audienceClassGroups   String[]             @default([])
+  audienceIndividualIds String[]             @default([])
+  createdById           String
+  createdBy             User                 @relation("AnnouncementCreated", fields: [createdById], references: [id])
+  createdAt             DateTime             @default(now())
+}
+
+model CurriculumMaterial {
+  id             String                 @id @default(cuid())
+  title          String
+  description    String?
+  materialType   CurriculumMaterialType
+  fileRef        String
+  visibleToRoles String[]               @default([])
+  uploadedById   String
+  uploadedBy     User                   @relation("MaterialUploaded", fields: [uploadedById], references: [id])
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+}
+
+model PortfolioItem {
+  id                 String   @id @default(cuid())
+  studentId          String
+  student            User     @relation("PortfolioOwner", fields: [studentId], references: [id])
+  imageRef           String
+  caption            String?
+  instructorFeedback String?
+  feedbackById       String?
+  feedbackBy         User?    @relation("PortfolioFeedback", fields: [feedbackById], references: [id])
+  createdAt          DateTime @default(now())
+}
+
+model InstructorTask {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      String   @default("open")
+  creatorId   String
+  creator     User     @relation("InstructorTaskCreator", fields: [creatorId], references: [id])
+  assigneeId  String?
+  assignee    User?    @relation("InstructorTaskAssignee", fields: [assigneeId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  studentId    String
+  student      User             @relation("AttendanceStudent", fields: [studentId], references: [id])
+  recordedById String
+  recordedBy   User             @relation("AttendanceRecorder", fields: [recordedById], references: [id])
+  date         DateTime
+  status       AttendanceStatus
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([studentId, date])
+}
+
+model ClockLocation {
+  id           String   @id @default(cuid())
+  lat          Float
+  lng          Float
+  radiusMeters Int
+  label        String?
+  isEnabled    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

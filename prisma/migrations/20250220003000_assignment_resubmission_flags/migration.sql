@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE IF EXISTS "AssignmentSubmission"
+ADD COLUMN IF NOT EXISTS "canResubmit" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN IF NOT EXISTS "resubmissionRequested" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE IF EXISTS "assignmentSubmission"
+ADD COLUMN IF NOT EXISTS "canResubmit" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN IF NOT EXISTS "resubmissionRequested" BOOLEAN NOT NULL DEFAULT false;
+

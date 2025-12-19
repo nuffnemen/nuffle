@@ -1,0 +1,8 @@
+-- AlterTable (handle both current naming conventions)
+ALTER TABLE IF EXISTS "HourEntry"
+ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "endedAt" TIMESTAMP(3);
+
+ALTER TABLE IF EXISTS "hourEntry"
+ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "endedAt" TIMESTAMP(3);

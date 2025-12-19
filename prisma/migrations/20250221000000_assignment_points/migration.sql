@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE IF EXISTS "Assignment"
+ADD COLUMN IF NOT EXISTS "pointsPossible" INTEGER;
+
+ALTER TABLE IF EXISTS "assignment"
+ADD COLUMN IF NOT EXISTS "pointsPossible" INTEGER;
